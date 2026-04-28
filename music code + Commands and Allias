@@ -11,10 +11,12 @@ from dotenv import load_dotenv
 # --- SETUP ---
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
-lass MasterBot(commands.Bot):
+RED_COLOR = 0xDC143C # This is costomizeable 
+
+class MasterBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
-        super().__init__(command_prefix=",", intents=intents, help_command=None) (# You can change this prefix to your liking.)
+        super().__init__(command_prefix=",", intents=intents, help_command=None) # You can change this prefix to your liking.
         self.queues = {}
         self.current_song = {}
     async def setup_hook(self): await self.tree.sync()
@@ -24,7 +26,7 @@ bot = MasterBot()
 # --- STATUS ROTATOR ---
 status_messages = itertools.cycle([
     discord.Game(name="Recording Hits 🎤"),
-    discord.Activity(type=discord.ActivityType.listening, name="the queue 🏮"),   (# You can customize this.)
+    discord.Activity(type=discord.ActivityType.listening, name="the queue 🏮"),   # You can customize this.
     discord.Activity(type=discord.ActivityType.watching, name="on Mobile 📱")
 ])
 
@@ -53,9 +55,9 @@ async def on_ready():
 
 @bot.hybrid_command(name="help")
 async def help(ctx):
-    embed = discord.Embed(title="🏮 Master Bot Commands", color=RED_COLOR)
-    embed.add_field(name="🎵 Music", value="`play` (p), `skip` (s), `stop` (dc), `np>
-    embed.add_field(name="🛡️ Mod", value="`clear` (c), `ping`", inline=False)
+    embed = discord.Embed(title="Help", color=RED_COLOR)
+    embed.add_field(name="Music", value="`play` (p), `skip` (s), `stop` (dc), `np>
+    embed.add_field(name="Mod", value="`clear` (c), `ping`", inline=False)
     await ctx.send(embed=embed)
 
 @bot.hybrid_command(name="lyrics", aliases=['ly'])
@@ -102,6 +104,6 @@ async def stop(ctx):
     if ctx.voice_client:
         bot.queues[ctx.guild.id] = []
         await ctx.voice_client.disconnect()
-        await ctx.send("👋 Studio closed.")
+        await ctx.send("Bye.")
 
 bot.run(TOKEN)
