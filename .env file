@@ -1,0 +1,4 @@
+make a .env file 
+then;
+
+DISCORD_TOKEN={YOUR_DISCORD_BOT_TOKEN} # Remove the brackets and just place your bots token in there and save & exit.
