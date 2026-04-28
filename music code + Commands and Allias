@@ -1,0 +1,107 @@
+import os
+import asyncio
+import discord
+import yt_dlp
+import itertools
+import requests # Added for free lyrics
+from discord.ext import commands, tasks
+from discord.gateway import DiscordWebSocket
+from dotenv import load_dotenv
+
+# --- SETUP ---
+load_dotenv()
+TOKEN = os.getenv("DISCORD_TOKEN")
+lass MasterBot(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.all()
+        super().__init__(command_prefix=",", intents=intents, help_command=None) (# You can change this prefix to your liking.)
+        self.queues = {}
+        self.current_song = {}
+    async def setup_hook(self): await self.tree.sync()
+
+bot = MasterBot()
+
+# --- STATUS ROTATOR ---
+status_messages = itertools.cycle([
+    discord.Game(name="Recording Hits 🎤"),
+    discord.Activity(type=discord.ActivityType.listening, name="the queue 🏮"),   (# You can customize this.)
+    discord.Activity(type=discord.ActivityType.watching, name="on Mobile 📱")
+])
+
+@tasks.loop(minutes=5)
+async def change_status(): await bot.change_presence(activity=next(status_messages))
+
+# Music Engine Config
+YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True', 'quiet': True, 'ext>
+FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_d>
+
+def check_queue(ctx, gid):
+    if gid in bot.queues and bot.queues[gid]:
+        next_song = bot.queues[gid].pop(0)
+        bot.current_song[gid] = next_song
+        source = discord.FFmpegPCMAudio(next_song['url'], **FFMPEG_OPTIONS)
+        ctx.voice_client.play(discord.PCMVolumeTransformer(source), after=lambda e: >
+        asyncio.run_coroutine_threadsafe(ctx.send(embed=discord.Embed(description=f">
+    else: bot.current_song[gid] = None
+
+@bot.event
+async def on_ready():
+    if not change_status.is_running(): change_status.start()
+    print(f'🚀 {bot.user} is officially ONLINE!')
+
+    # --- COMMANDS ---
+
+@bot.hybrid_command(name="help")
+async def help(ctx):
+    embed = discord.Embed(title="🏮 Master Bot Commands", color=RED_COLOR)
+    embed.add_field(name="🎵 Music", value="`play` (p), `skip` (s), `stop` (dc), `np>
+    embed.add_field(name="🛡️ Mod", value="`clear` (c), `ping`", inline=False)
+    await ctx.send(embed=embed)
+
+@bot.hybrid_command(name="lyrics", aliases=['ly'])
+async def lyrics(ctx, *, search: str = None):
+    """Fetches lyrics from the free Lyrics.ovh API"""
+    if search is None:
+        song = bot.current_song.get(ctx.guild.id)
+        if not song: return await ctx.send("❌ Nothing is playing! Try `,ly [artist >
+        search = song['title']
+    
+    await ctx.send(f"🔍 Searching for lyrics to: `{search}`...")
+    try:
+        # Simple API call that doesn't need an API Key
+        # Expects "Artist/Song" format for best results
+        response = requests.get(f"https://lyrics.ovh{search}")
+        data = response.json()
+        lyrics_text = data.get('lyrics', "⚠️ Lyrics not found for this track.")
+
+        if len(lyrics_text) > 4000: lyrics_text = lyrics_text[:4000] + "..."
+        await ctx.send(embed=discord.Embed(title=f"🎤 Lyrics: {search}", description>
+    except:
+        await ctx.send(f"⚠️ My lyric book is empty for `{search}`.")
+        @bot.hybrid_command(name="play", aliases=['p'])
+async def play(ctx, *, search: str):
+    if not ctx.author.voice: return await ctx.send("❌ Join voice first!")
+    if not ctx.voice_client: await ctx.author.voice.channel.connect()
+    vc, gid = ctx.voice_client, ctx.guild.id
+    if gid not in bot.queues: bot.queues[gid] = []
+    
+    async with ctx.typing():
+        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+            data = ydl.extract_info(f"ytsearch:{search}", download=False)['entries']>
+            song = {'url': data['url'], 'title': data['title'], 'link': data['webpag>
+            if vc.is_playing():
+                bot.queues[gid].append(song)
+                await ctx.send(f"✅ Queued: **{song['title']}**")
+            else:
+                bot.current_song[gid] = song
+                vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song['ur>
+                await ctx.send(embed=discord.Embed(description=f"🎶 Playing: **{song>
+
+@bot.hybrid_command(name="stop", aliases=['dc'])
+async def stop(ctx):
+    if ctx.voice_client:
+        bot.queues[ctx.guild.id] = []
+        await ctx.voice_client.disconnect()
+        await ctx.send("👋 Studio closed.")
+
+bot.run(TOKEN)
