@@ -1,0 +1,18 @@
+yt-dlp
+
+before you run any of this make sure in the terminal shows "(.venv)" then run;
+
+pip install -U "yt-dlp[default]"
+# Using the [default] tag ensures you get the recommended dependencies for better performance.
+
+Next run this;
+
+sudo apt update
+sudo apt install ffmpeg -y
+
+
+Finnaly Run this;
+
+pip install -U discord.py[voice] python-dotenv
+
+DO THIS BEFORE YOU DO THE going to the 24 FOLDER tag 7
