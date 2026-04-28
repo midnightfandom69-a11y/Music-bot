@@ -1,0 +1,21 @@
+for 24/7 running
+
+# Update your package list
+sudo apt update
+
+# Install Node.js and NPM
+sudo apt install nodejs npm -y
+
+# Install PM2 globally
+sudo npm install pm2@latest -g
+
+then; 
+
+# Go to your folder
+cd ~/mybot
+
+# Activate your virtual environment
+source .venv/bin/activate
+
+# Launch the bot with a custom name
+pm2 start bot.py --name "Bot_Name" --interpreter python3 # Replace Bot_Name with your bots name.
